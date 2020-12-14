@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.entity.MateriaEntity;
 import com.example.demo.services.MateriaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +30,7 @@ public class MateriaController {
 
     @PostMapping
     public ResponseEntity<Boolean> cadastrarMateria(@RequestBody MateriaEntity materia){
-       return ResponseEntity.ok().body(this.materiaService.cadastrar(materia));
+       return ResponseEntity.status(HttpStatus.CREATED).body(this.materiaService.cadastrar(materia));
     }
 
     @DeleteMapping("/{id}")
