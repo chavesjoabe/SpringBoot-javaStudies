@@ -34,6 +34,6 @@ public class MateriaEntity implements Serializable{
     private String codigo;
 
     @Column(name = "freq")
-    private int frenquencia;
+    private Integer frequencia;
 
 }

@@ -1,9 +1,13 @@
 package com.example.demo.services;
 
+import com.example.demo.dto.MateriaDto;
 import com.example.demo.entity.MateriaEntity;
 import com.example.demo.exceptions.MateriaException;
 import com.example.demo.repositories.MateriaRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -14,76 +18,82 @@ import java.util.Optional;
 @Service
 public class MateriaService implements IMateriaService {
 
-    @Autowired
+    private static final String MENSAGEM_ERRO = "Erro interno do Servidor, contate o suporte";
+    private static final String MATERIA_NAO_ENCONTRADA = "Materia Nao encontrada";
     private MateriaRepository materiaRepository;
+    private ModelMapper mapper;
+
+
+    @Autowired
+    public MateriaService(MateriaRepository materiaRepository) {
+        this.materiaRepository = materiaRepository;
+        this.mapper = new ModelMapper();
+    }
 
     @Override
     public List<MateriaEntity> listar() {
-        try{
+        try {
             return materiaRepository.findAll();
-        }catch (Exception e){
+        } catch (Exception e) {
             return new ArrayList<>();
         }
     }
 
+    @Cacheable(value = "materia", key = "#id")
     @Override
     public MateriaEntity buscarPorId(Long id) {
-        try{
+        try {
             Optional<MateriaEntity> materiaOptional = this.materiaRepository.findById(id);
-            if(materiaOptional.isPresent()) {
+            if (materiaOptional.isPresent()) {
 
                 return materiaOptional.get();
             }
-            throw new MateriaException("Materia Nao encontrada", HttpStatus.NOT_FOUND);
-        }catch (MateriaException m){
+            throw new MateriaException(MATERIA_NAO_ENCONTRADA, HttpStatus.NOT_FOUND);
+        } catch (MateriaException m) {
             throw m;
-        }
-        catch (Exception e){
-            throw new MateriaException("Erro interno do Servidor, contate o suporte", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
+    @CacheEvict(value = "materia", allEntries = true)
     @Override
-    public Boolean cadastrar(MateriaEntity materia) {
-        try{
-            materiaRepository.save(materia);
-            return true;
-        }catch (Exception e){
-            return false;
+    public Boolean cadastrar(MateriaDto materia) {
+        try {
+            MateriaEntity materiaEntity = this.mapper.map(materia, MateriaEntity.class);
+            materiaRepository.save(materiaEntity);
+            return Boolean.TRUE;
+        } catch (Exception e) {
+            throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @Override
     public Boolean deletar(Long id) {
-        try{
+        try {
             this.buscarPorId(id);
             materiaRepository.deleteById(id);
-            return true;
-        }catch (MateriaException m){
+            return Boolean.TRUE;
+        } catch (MateriaException m) {
             throw m;
+        } catch (Exception e) {
+            throw e;
         }
-        catch (Exception e){
-            throw e;        }
     }
-
+    @CacheEvict(value = "materia", allEntries = true)
     @Override
-    public Boolean atualizar(MateriaEntity materia) {
-        try{
-            MateriaEntity materiaAtualizada = this.buscarPorId(materia.getId());
+    public Boolean atualizar(MateriaDto materia) {
+        try {
+            this.buscarPorId(materia.getId());
 
-                materiaAtualizada.setNome(materia.getNome());
-                materiaAtualizada.setHoras(materia.getHoras());
-                materiaAtualizada.setCodigo(materia.getCodigo());
-                materiaAtualizada.setFrenquencia(materia.getFrenquencia());
+            MateriaEntity materiaAtualizada = this.mapper.map(materia, MateriaEntity.class);
 
-                materiaRepository.save(materiaAtualizada);
+            materiaRepository.save(materiaAtualizada);
 
-            return true;
+            return Boolean.TRUE;
 
-        }catch (MateriaException m){
+        } catch (MateriaException m) {
             throw m;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw e;
         }
     }
