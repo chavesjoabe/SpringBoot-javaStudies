@@ -1,13 +1,16 @@
 package com.example.demo.services;
 
+import com.example.demo.controller.MateriaController;
 import com.example.demo.dto.MateriaDto;
 import com.example.demo.entity.MateriaEntity;
 import com.example.demo.exceptions.MateriaException;
 import com.example.demo.repositories.MateriaRepository;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -31,22 +34,30 @@ public class MateriaService implements IMateriaService {
     }
 
     @Override
-    public List<MateriaEntity> listar() {
-        try {
-            return materiaRepository.findAll();
+    public List<MateriaDto> listar() {
+        try{
+            List<MateriaDto> materiaDto = this.mapper.map(this.materiaRepository.findAll(), new TypeToken<List<MateriaDto>>(){
+
+            }.getType());
+            materiaDto.forEach(materia ->{
+                materia.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder
+                        .methodOn(MateriaController.class).consultaMateria(materia.getId()))
+                        .withSelfRel());
+            });
+
+            return materiaDto;
         } catch (Exception e) {
-            return new ArrayList<>();
-        }
+            throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);        }
     }
 
     @Cacheable(value = "materia", key = "#id")
     @Override
-    public MateriaEntity buscarPorId(Long id) {
+    public MateriaDto buscarPorId(Long id) {
         try {
             Optional<MateriaEntity> materiaOptional = this.materiaRepository.findById(id);
             if (materiaOptional.isPresent()) {
 
-                return materiaOptional.get();
+                return this.mapper.map(materiaOptional.get(), MateriaDto.class);
             }
             throw new MateriaException(MATERIA_NAO_ENCONTRADA, HttpStatus.NOT_FOUND);
         } catch (MateriaException m) {
