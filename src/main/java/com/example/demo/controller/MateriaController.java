@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.MateriaDto;
+import com.example.demo.entity.MateriaEntity;
 import com.example.demo.model.Response;
 import com.example.demo.services.MateriaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,6 +92,18 @@ public class MateriaController {
                 .listarMaterias()).withRel(LIST));
         response.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MateriaController.class)
                 .deletarMateria(materia.getId())).withRel(DELETE));
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+
+    }
+
+    @GetMapping("/hora-minima/{horaMinima}")
+    public ResponseEntity<Response<List<MateriaEntity>>> consultaPorHoraMinima(@PathVariable int HoraMinima){
+
+        Response<List<MateriaEntity>> response = new Response();
+        List<MateriaEntity>materias = this.materiaService.listarMateriaPorHoraMinima(HoraMinima);
+        response.setData(materias);
+        response.setStatusCode(HttpStatus.OK.value());
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
 

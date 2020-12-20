@@ -108,4 +108,17 @@ public class MateriaService implements IMateriaService {
             throw e;
         }
     }
+
+    public List<MateriaEntity> listarMateriaPorHoraMinima(int horaMinima){
+        try {
+            List<MateriaEntity> lista = this.materiaRepository.findByMinHour(horaMinima);
+
+            return lista;
+        } catch (MateriaException m) {
+            throw m;
+        } catch (Exception e) {
+            throw e;
+        }
+
+    }
 }
